@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bitvavo-lab-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bitvavo_lab}
+      POSTGRES_USER: ${POSTGRES_USER:-bitvavo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambiar}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bitvavo} -d ${POSTGRES_DB:-bitvavo_lab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bitvavo-lab-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+    ports:
+      - "${APP_PORT:-8001}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:
+    image: nginx:1.27-alpine
+    container_name: bitvavo-lab-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-8080}:80"
+    volumes:
+      - ./app/dashboard/static:/usr/share/nginx/html:ro
+      - ./app/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:

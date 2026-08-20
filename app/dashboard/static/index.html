@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bitvavo Lab</title>
+    <style>
+      :root {
+        --border: rgba(148, 163, 184, 0.16);
+        --text: #e5edf9;
+        --muted: #93a3bf;
+        --green: #29d17d;
+        --yellow: #f4bc42;
+        --red: #ff5d73;
+        --blue: #63a4ff;
+        --shadow: 0 24px 80px rgba(1, 8, 20, 0.45);
+        --radius: 22px;
+        --font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(36, 98, 255, 0.22), transparent 22%),
+          radial-gradient(circle at bottom right, rgba(45, 212, 191, 0.16), transparent 20%),
+          linear-gradient(180deg, #09101c 0%, #0b1020 60%, #0d1326 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+      .sidebar {
+        padding: 28px 22px;
+        border-right: 1px solid var(--border);
+        background: rgba(7, 12, 24, 0.88);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+      .brand { display: grid; gap: 10px; margin-bottom: 26px; }
+      .brand h1 { margin: 0; font-size: 1.7rem; letter-spacing: 0.04em; }
+      .brand p, .section-subtitle, .muted { margin: 0; color: var(--muted); }
+      .mode-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(41, 209, 125, 0.14), rgba(99, 164, 255, 0.14));
+        margin-bottom: 20px;
+      }
+      .mode-banner > * { min-width: 0; }
+      #modeBannerStatus { max-width: 100%; }
+      .nav { display: grid; gap: 8px; }
+      .nav button {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        padding: 13px 14px;
+        border-radius: 16px;
+        text-align: left;
+        font-size: 0.96rem;
+        cursor: pointer;
+        transition: 160ms ease;
+      }
+      .nav button:hover, .nav button.active {
+        color: var(--text);
+        background: rgba(99, 164, 255, 0.12);
+        border-color: rgba(99, 164, 255, 0.18);
+      }
+      .sidebar-footer {
+        position: absolute;
+        bottom: 28px;
+        left: 22px;
+        right: 22px;
+        padding: 16px;
+        background: rgba(18, 28, 47, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+      }
+      .content { padding: 26px; }
+      .topbar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .headline h2 { margin: 0 0 6px; font-size: 1.7rem; }
+      .status-strip { display: flex; gap: 10px; flex-wrap: wrap; }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(19, 26, 46, 0.8);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 0.9rem;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--muted);
+        box-shadow: 0 0 12px currentColor;
+      }
+      .dot.green { color: var(--green); background: var(--green); }
+      .dot.red { color: var(--red); background: var(--red); }
+      .dot.yellow { color: var(--yellow); background: var(--yellow); }
+      .grid { display: grid; gap: 18px; }
+      .cards-hero { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .cards-secondary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .panel {
+        background: linear-gradient(180deg, rgba(18, 24, 42, 0.92), rgba(12, 17, 30, 0.96));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+      }
+      .metric-card { min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; }
+      .metric-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .metric-title { margin: 0; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; }
+      .metric-value { margin: 14px 0 0; font-size: clamp(1.6rem, 2vw, 2.2rem); font-weight: 700; }
+      .metric-foot { color: var(--muted); font-size: 0.92rem; }
+      .section-title { margin: 0 0 6px; font-size: 1.2rem; }
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+      select, input {
+        background: rgba(8, 13, 25, 0.85);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font: inherit;
+        max-width: 100%;
+      }
+      .chart { width: 100%; min-height: 280px; }
+      .split { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 18px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td {
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+      tbody tr:hover { background: rgba(99, 164, 255, 0.06); }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+      }
+      .pill.green { color: var(--green); background: rgba(41, 209, 125, 0.12); border-color: rgba(41, 209, 125, 0.16); }
+      .pill.red { color: var(--red); background: rgba(255, 93, 115, 0.12); border-color: rgba(255, 93, 115, 0.18); }
+      .pill.yellow { color: var(--yellow); background: rgba(244, 188, 66, 0.12); border-color: rgba(244, 188, 66, 0.2); }
+      .pill.blue { color: var(--blue); background: rgba(99, 164, 255, 0.12); border-color: rgba(99, 164, 255, 0.18); }
+      .list { display: grid; gap: 12px; }
+      .list-item {
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(12, 19, 35, 0.82);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+      .page { display: none; }
+      .page.active { display: block; }
+      .panel, .page, .filters, .status-strip, .chip { min-width: 0; }
+      .empty, .loading, .error-box {
+        padding: 22px;
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .error-box {
+        color: #ffd7dd;
+        background: rgba(255, 93, 115, 0.1);
+        border-style: solid;
+        border-color: rgba(255, 93, 115, 0.22);
+      }
+      .accordion summary { cursor: pointer; color: var(--text); font-weight: 600; }
+      .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+      .small { font-size: 0.86rem; }
+      .positive { color: var(--green); }
+      .negative { color: var(--red); }
+      .warning { color: var(--yellow); }
+      @media (max-width: 1180px) {
+        .cards-hero, .cards-secondary, .three-col, .split, .two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 920px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+        .sidebar-footer { position: static; margin-top: 18px; }
+      }
+      @media (max-width: 720px) {
+        .content { padding: 18px; }
+        .cards-hero, .cards-secondary, .three-col, .split, .two-col { grid-template-columns: 1fr; }
+        .filters select, .filters input { width: 100%; }
+        .mode-banner { align-items: flex-start; }
+        #modeBannerStatus { width: 100%; }
+        #modeBannerStatus .pill { width: 100%; justify-content: center; }
+        table, thead, tbody, th, td, tr { display: block; }
+        thead { display: none; }
+        tbody tr {
+          margin-bottom: 14px;
+          border: 1px solid rgba(148, 163, 184, 0.12);
+          border-radius: 16px;
+          overflow: hidden;
+          background: rgba(10, 16, 30, 0.86);
+        }
+        td { display: flex; justify-content: space-between; gap: 12px; }
+        td::before { content: attr(data-label); color: var(--muted); font-weight: 600; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="small muted">Laboratorio privado</p>
+          <h1>BITVAVO LAB</h1>
+          <p>Monitorizacion, arbitraje triangular y simulacion conservadora.</p>
+        </div>
+        <div class="mode-banner">
+          <div>
+            <div class="small muted">Modo operativo</div>
+            <strong id="modeBannerValue">SIMULACION</strong>
+          </div>
+          <div id="modeBannerStatus"></div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+        <div class="sidebar-footer">
+          <div class="small muted">Ultima actualizacion</div>
+          <div id="sidebarUpdate">Esperando datos...</div>
+          <div class="small muted" style="margin-top:10px;">Bitvavo</div>
+          <div id="sidebarConnection">Conectando...</div>
+        </div>
+      </aside>
+      <main class="content">
+        <div class="topbar">
+          <div class="headline">
+            <h2 id="pageTitle">Resumen</h2>
+            <p class="section-subtitle" id="pageSubtitle">Vision principal del sistema y del experimento activo.</p>
+          </div>
+          <div class="status-strip" id="statusStrip"></div>
+        </div>
+        <div id="globalState" class="loading">Conectando con el laboratorio...</div>
+        <div id="pages"></div>
+      </main>
+    </div>
+    <script>
+      const state = {
+        page: location.hash.replace("#", "") || "overview",
+        sort: {},
+        filters: { market: "all", strategy: "all", capital: "all", period: "24h" },
+        data: {},
+        meta: {
+          pages: [
+            ["overview", "Resumen", "Vision principal del sistema y del experimento activo."],
+            ["markets", "Mercados", "Precios, diferenciales, liquidez y estado por mercado."],
+            ["opportunities", "Oportunidades", "Rutas, rentabilidad, costes, duracion y ejecutabilidad."],
+            ["experiments", "Experimentos", "Estados y resultados por estrategia de investigacion."],
+            ["statistics", "Estadisticas", "Ventanas 24h, 7d, 30d y total con series resumidas."],
+            ["system", "Sistema", "Salud, conexiones, almacenamiento y eventos recientes."],
+            ["configuration", "Configuracion", "Parametros no sensibles y barreras de seguridad."],
+          ],
+        },
+      };
+
+      const money = (value, digits = 2) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number(value ?? 0));
+      const num = (value, digits = 2) => new Intl.NumberFormat("es-ES", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number(value ?? 0));
+      const ago = (value) => value === null || value === undefined ? "sin datos" : value < 1 ? "ahora" : value < 60 ? `hace ${num(value, 1)} s` : `hace ${num(value / 60, 1)} min`;
+      const pill = (text, tone = "blue") => `<span class="pill ${tone}">${text}</span>`;
+      const toneByValue = (value) => Number(value) >= 0 ? "positive" : "negative";
+
+      function metricCard(title, value, foot, tone) {
+        return `<section class="panel metric-card"><div class="metric-header"><div><p class="metric-title">${title}</p><div class="metric-value">${value}</div></div><span class="dot ${tone}"></span></div><div class="metric-foot">${foot}</div></section>`;
+      }
+
+      function chartSvg(points, color, labelFn) {
+        if (!points?.length) return `<div class="empty">No hay datos suficientes para la grafica.</div>`;
+        const width = 680, height = 260, pad = 28;
+        const values = points.map((point) => Number(point.value ?? 0));
+        const max = Math.max(...values, 1);
+        const min = Math.min(...values, 0);
+        const range = Math.max(max - min, 1);
+        const step = values.length > 1 ? (width - pad * 2) / (values.length - 1) : 0;
+        const coords = values.map((value, index) => [pad + index * step, height - pad - ((value - min) / range) * (height - pad * 2)]);
+        const polyline = coords.map(([x, y]) => `${x},${y}`).join(" ");
+        const area = `M ${pad} ${height - pad} ` + coords.map(([x, y]) => `L ${x} ${y}`).join(" ") + ` L ${width - pad} ${height - pad} Z`;
+        return `<svg class="chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><defs><linearGradient id="grad-${color.replace("#", "")}" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop><stop offset="100%" stop-color="${color}" stop-opacity="0.02"></stop></linearGradient></defs>${[0,0.25,0.5,0.75,1].map((line) => `<line x1="${pad}" x2="${width - pad}" y1="${height - pad - (height - pad * 2) * line}" y2="${height - pad - (height - pad * 2) * line}" stroke="rgba(148,163,184,0.12)" />`).join("")}<path d="${area}" fill="url(#grad-${color.replace("#", "")})"></path><polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="3"></polyline>${coords.map(([x, y], index) => `<g><circle cx="${x}" cy="${y}" r="4.5" fill="${color}"></circle><text x="${x}" y="${height - 8}" fill="#93a3bf" font-size="10" text-anchor="middle">${points[index].label.slice(0, 10)}</text><text x="${x}" y="${y - 10}" fill="#e5edf9" font-size="10" text-anchor="middle">${labelFn(values[index])}</text></g>`).join("")}</svg>`;
+      }
+
+      function table(columns, rows, key, emptyText) {
+        if (!rows?.length) return `<div class="empty">${emptyText}</div>`;
+        const sort = state.sort[key];
+        const items = [...rows];
+        if (sort) {
+          items.sort((a, b) => {
+            const l = a[sort.column];
+            const r = b[sort.column];
+            if (typeof l === "number" && typeof r === "number") return sort.dir === "asc" ? l - r : r - l;
+            return sort.dir === "asc" ? String(l).localeCompare(String(r)) : String(r).localeCompare(String(l));
+          });
+        }
+        return `<table><thead><tr>${columns.map((col) => `<th data-sort="${key}:${col.key}">${col.label}${sort?.column === col.key ? sort.dir === "asc" ? " ▲" : " ▼" : ""}</th>`).join("")}</tr></thead><tbody>${items.map((row) => `<tr>${columns.map((col) => `<td data-label="${col.label}">${col.render ? col.render(row[col.key], row) : row[col.key]}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+      }
+
+      function renderOverview(data) {
+        const best = data.best_opportunity;
+        const warnings = data.warnings || [];
+        const mm = data.market_making_pnl?.overall || {};
+        const mmBaseline = data.market_making_pnl?.baseline || {};
+        const micro = data.microstructure?.overall || {};
+        const latencyFoot = Array.isArray(data.latency_scenarios_ms) && data.latency_scenarios_ms.length
+          ? `Escenarios ${data.latency_scenarios_ms.join(" / ")} ms`
+          : "Sin escenarios configurados";
+        return `<div class="grid cards-hero">${metricCard("Estado general", data.system_status || "ESTABLE", warnings.length ? "Requiere atencion" : "Todo estable", warnings.length ? "yellow" : "green")}${metricCard("Micro senales", String(data.microstructure?.signal_count || 0), `${micro.state || "RECOLECTANDO"} | ${micro.promising_signal || "sin patron lider"}`, data.microstructure?.signal_count ? "blue" : "yellow")}${metricCard("Market making", mmBaseline.status || "NO RENTABLE", `${mm.total_simulations || 0} simulaciones congeladas`, "red")}${metricCard("Beneficio simulado", money(data.simulated_profit_today || 0), `${data.executable_today || 0} ejecutables con margen`, Number(data.simulated_profit_today || 0) >= 0 ? "green" : "red")}</div><div class="grid cards-secondary" style="margin-top:18px;">${metricCard("Bitvavo", data.bitvavo_status || "Conectando", `Ultima actualizacion ${ago(data.last_update_seconds)}`, data.bitvavo_status === "CONECTADO" ? "green" : "red")}${metricCard("Latencia actual", data.current_latency_ms !== null ? `${data.current_latency_ms} ms` : "Sin datos", latencyFoot, data.current_latency_ms < 1500 ? "green" : "yellow")}${metricCard("Estrategia lider", data.best_strategy || "Sin definir", `${(data.experiments || []).filter((item) => item.status === "SIMULANDO").length} en simulacion`, "blue")}</div><div class="split" style="margin-top:18px;"><section class="panel"><div class="panel-header"><div><h3 class="section-title">Rentabilidad neta actual</h3><p class="section-subtitle">Peor caso observado entre los escenarios conservadores.</p></div></div>${chartSvg(data.charts || [], "#42d7ff", (v) => `${num(v, 2)}%`)}</section><section class="panel"><div class="panel-header"><div><h3 class="section-title">Alertas y riesgos</h3><p class="section-subtitle">Solo lo importante para decidir rapido.</p></div></div><div class="list">${(warnings.length ? warnings : [{ level: "green", message: "No hay alertas activas. Infraestructura estable." }]).map((item) => `<div class="list-item"><div class="${item.level === "error" ? "negative" : item.level === "warning" ? "warning" : "positive"}"><strong>${item.level === "error" ? "Error" : item.level === "warning" ? "Aviso" : "OK"}</strong></div><div class="small" style="margin-top:6px;">${item.message}</div></div>`).join("")}</div></section></div><div class="split" style="margin-top:18px;"><section class="panel"><div class="panel-header"><div><h3 class="section-title">Ultimas oportunidades</h3><p class="section-subtitle">Neto actual frente al peor caso y estado de ejecucion.</p></div></div>${table([{ key: "route", label: "Ruta" },{ key: "capital", label: "Capital", render: (v) => money(v) },{ key: "net_profit_pct", label: "Neto actual", render: (v) => `<span class="${toneByValue(v)}">${num(v, 3)} %</span>` },{ key: "worst_case_profit_pct", label: "Peor caso", render: (v) => `<span class="${toneByValue(v)}">${num(v, 3)} %</span>` },{ key: "worst_case_latency_ms", label: "Latencia", render: (v) => `${v} ms` },{ key: "executable", label: "Ejecutable", render: (v, row) => `${v ? pill("SI", "green") : pill("NO", "red")}<div class="small muted" style="margin-top:6px;">${row.executable_reason || ""}</div>` }], data.recent_opportunities || [], "overview-opps", "Aun no hay oportunidades rentables activas.")}</section><section class="panel"><div class="panel-header"><div><h3 class="section-title">Microineficiencias</h3><p class="section-subtitle">Laboratorio estadistico en discovery y validation.</p></div></div><div class="list">${[["Senales totales", String(data.microstructure?.signal_count || 0)],["Acierto medio", `${num(micro.hit_rate_pct || 0, 1)} %`],["Movimiento medio", `${num(micro.movement_mean_pct || 0, 4)} %`],["Mejor horizonte", micro.best_horizon_ms ? `${micro.best_horizon_ms} ms` : "sin datos"],["Estado", micro.state || "RECOLECTANDO"],["Patron lider", micro.promising_signal || "sin evidencia"]].map(([k,v]) => `<div class="list-item" style="display:flex;justify-content:space-between;"><span>${k}</span><strong>${v}</strong></div>`).join("")}</div></section></div><div class="split" style="margin-top:18px;"><section class="panel"><div class="panel-header"><div><h3 class="section-title">PnL acumulado market making</h3><p class="section-subtitle">Baseline congelado para comparar futuras ideas.</p></div></div>${chartSvg(data.market_making_pnl?.equity_curve || [], "#ff5d73", (v) => money(v))}</section><section class="panel"><div class="panel-header"><div><h3 class="section-title">Estado de experimentos</h3><p class="section-subtitle">Prioridad y situacion de cada linea de investigacion.</p></div></div><div class="list">${(data.experiments || []).map((item) => `<div class="list-item"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;"><div><strong>${item.label}</strong><div class="small muted" style="margin-top:6px;">${item.description}</div></div>${pill(item.status, item.status === "SIMULANDO" ? "blue" : item.status === "PENDIENTE" ? "yellow" : item.status === "NO RENTABLE" ? "red" : "green")}</div></div>`).join("")}</div></section></div>`;
+      }
+
+      function renderMarkets(data) {
+        return `<section class="panel"><div class="panel-header"><div><h3 class="section-title">Mercados monitorizados</h3><p class="section-subtitle">Precios, diferencial y liquidez base sobre los libros vivos.</p></div><div class="chip">Ultima actualizacion ${ago(data.last_update_seconds)}</div></div>${table([{ key: "market", label: "Mercado" },{ key: "status", label: "Estado", render: (v) => pill(v, v === "TRADING" ? "green" : "yellow") },{ key: "bid", label: "Compra", render: (v) => num(v, 6) },{ key: "ask", label: "Venta", render: (v) => num(v, 6) },{ key: "spread_pct", label: "Spread %", render: (v) => `${num(v, 4)} %` },{ key: "bid_liquidity", label: "Liquidez bid", render: (v) => num(v, 4) },{ key: "ask_liquidity", label: "Liquidez ask", render: (v) => num(v, 4) }], data.markets || [], "markets-table", "Todavia no hay mercados listos.")}</section>`;
+      }
+
+      function filteredOpportunities(data) {
+        return (data.opportunities || []).filter((item) => (state.filters.market === "all" || (item.markets || []).includes(state.filters.market)) && (state.filters.capital === "all" || String(item.capital) === state.filters.capital) && (state.filters.strategy === "all" || item.strategy === state.filters.strategy));
+      }
+
+      function renderOpportunities(data) {
+        const items = filteredOpportunities(data);
+        const allMarkets = [...new Set((data.opportunities || []).flatMap((item) => item.markets || []))];
+        const allCapitals = [...new Set((data.opportunities || []).map((item) => String(item.capital)))];
+        return `<section class="panel"><div class="panel-header"><div><h3 class="section-title">Oportunidades activas</h3><p class="section-subtitle">Bruto, comisiones, deslizamiento y resultado neto por ruta.</p></div><div class="filters"><select data-filter="market"><option value="all">Todos los mercados</option>${allMarkets.map((item) => `<option value="${item}" ${state.filters.market === item ? "selected" : ""}>${item}</option>`).join("")}</select><select data-filter="capital"><option value="all">Todos los capitales</option>${allCapitals.map((item) => `<option value="${item}" ${state.filters.capital === item ? "selected" : ""}>${money(item)}</option>`).join("")}</select><select data-filter="strategy"><option value="all">Todas las estrategias</option><option value="TRIANGULAR_ARBITRAGE" ${state.filters.strategy === "TRIANGULAR_ARBITRAGE" ? "selected" : ""}>Triangular</option></select></div></div>${table([{ key: "route", label: "Ruta" },{ key: "capital", label: "Capital", render: (v) => money(v) },{ key: "ranking_score", label: "Score", render: (v) => `<strong>${num(v, 1)}</strong>` },{ key: "gross_profit_pct", label: "Bruto %", render: (v) => `${num(v, 3)} %` },{ key: "total_fee_amount", label: "Comisiones", render: (v) => money(v) },{ key: "slippage_pct", label: "Deslizamiento", render: (v) => `${num(v, 4)} %` },{ key: "net_profit_pct", label: "Neto actual", render: (v) => `<span class="${toneByValue(v)}">${num(v, 3)} %</span>` },{ key: "worst_case_profit_pct", label: "Neto peor caso", render: (v) => `<span class="${toneByValue(v)}">${num(v, 3)} %</span>` },{ key: "safety_buffer_pct", label: "Buffer", render: (v) => `<span class="${toneByValue(v)}">${num(v, 3)} %</span>` },{ key: "worst_case_latency_ms", label: "Latencia", render: (v) => `${v} ms` },{ key: "duration_ms", label: "Duracion", render: (v) => `${v} ms` },{ key: "executable", label: "Ejecutable", render: (v, row) => `${v ? pill("SI", "green") : pill("NO", "red")}<div class="small muted" style="margin-top:6px;">${row.executable_reason || ""}</div>` }], items, "opportunities-table", "No hay oportunidades que cumplan los filtros actuales.")}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Detalle tecnico opcional</h3><p class="section-subtitle">Profundidad, latencia y conversiones por pata solo cuando hace falta.</p></div></div><div class="list">${items.slice(0, 5).map((item) => `<details class="accordion list-item"><summary>${item.route} | score ${num(item.ranking_score, 1)} | ${num(item.worst_case_profit_pct ?? item.net_profit_pct, 3)} %</summary><div class="small muted" style="margin-top:10px;">Mercados: ${(item.markets || []).join(", ")} | Escenarios: ${(item.latency_scenarios_ms || []).join(", ")} ms</div><div class="small muted" style="margin-top:8px;">${item.executable_reason || "Sin observaciones."}</div><div class="small" style="margin-top:12px;"><div style="padding:0 0 12px;"><strong>Resumen</strong><div class="muted">Actual ${num(item.net_profit_pct, 3)} % | Peor caso ${num(item.worst_case_profit_pct, 3)} % | Buffer ${num(item.safety_buffer_pct, 3)} % | Score ${num(item.ranking_score, 1)} | Latencia critica ${item.worst_case_latency_ms} ms</div></div>${(item.legs || []).map((leg) => `<div style="padding:10px 0;border-bottom:1px solid rgba(148,163,184,0.12);"><strong>${leg.from_asset} -> ${leg.to_asset}</strong> en ${leg.market} (${leg.side})<div class="muted">Entrada ${leg.input_amount} | Salida ${leg.output_amount} | Fee ${leg.fee_amount} | Precio medio ${leg.average_price}</div></div>`).join("")}</div></details>`).join("") || `<div class="empty">No hay detalles tecnicos que mostrar todavia.</div>`}</div></section>`;
+      }
+
+      function renderExperiments(data) {
+        const pnl = data.market_making_pnl || {};
+        const overall = pnl.overall || {};
+        const baseline = pnl.baseline || {};
+        const latest = pnl.latest_simulations || [];
+        const breakdowns = pnl.breakdowns || {};
+        const micro = data.microstructure || {};
+        const microOverall = micro.overall || {};
+        const microDiscovery = micro.discovery || {};
+        const microValidation = micro.validation || {};
+        return `<div class="three-col">${(data.experiments || []).map((item) => `<section class="panel"><div class="panel-header"><div><h3 class="section-title">${item.label}</h3><p class="section-subtitle">${item.description}</p></div>${pill(item.status, item.status === "SIMULANDO" ? "blue" : item.status === "PENDIENTE" ? "yellow" : item.status === "NO RENTABLE" ? "red" : "green")}</div><div class="small muted">Tipo: ${item.experiment_type}</div><div class="small muted" style="margin-top:8px;">Actualizado: ${new Date(item.updated_at).toLocaleString("es-ES")}</div></section>`).join("")}</div><div class="grid cards-secondary" style="margin-top:18px;">${metricCard("Rutas triangulares", String(data.triangular_route_count || 0), "Descubiertas automaticamente", "blue")}${metricCard("Senales micro", String(micro.current_signal_count || 0), `${micro.signal_count || 0} observadas`, micro.current_signal_count ? "green" : "yellow")}${metricCard("Market making", baseline.status || "NO RENTABLE", `${overall.total_simulations || 0} simulaciones congeladas`, "red")}</div><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Baseline congelado de market making</h3><p class="section-subtitle">Referencia historica preservada sin reoptimizar filtros.</p></div></div><div class="grid cards-secondary">${metricCard("PnL total", money(overall.pnl_total || 0), `${overall.total_simulations || 0} simulaciones`, Number(overall.pnl_total || 0) >= 0 ? "green" : "red")}${metricCard("Rentables", `${num(overall.profitable_ratio || 0, 1)} %`, overall.evaluation || "NO RENTABLE", Number(overall.profitable_ratio || 0) > 50 ? "green" : "red")}${metricCard("Congelado", baseline.frozen_at ? new Date(baseline.frozen_at).toLocaleString("es-ES") : "sin fecha", baseline.notes || "Baseline de referencia", "yellow")}</div><div class="grid cards-secondary" style="margin-top:18px;">${metricCard("Beneficio medio", money(overall.avg_profit || 0), `Media global ${money(overall.mean_pnl || 0)}`, "green")}${metricCard("Perdida media", money(overall.avg_loss || 0), `Peor operacion ${money(overall.worst_trade || 0)}`, "red")}${metricCard("Capital expuesto", money(overall.max_capital_exposed || 0), `Exposicion media ${num(overall.average_exposure_ms || 0, 0)} ms`, "yellow")}</div></section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">PnL acumulado congelado</h3><p class="section-subtitle">Curva historica del experimento descartado.</p></div></div>${chartSvg(pnl.equity_curve || [], "#ff5d73", (v) => money(v))}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Ultimas simulaciones market making</h3><p class="section-subtitle">Conservadas como comparativa futura.</p></div></div>${table([{ key: "market", label: "Mercado" },{ key: "average_entry_price", label: "Entrada", render: (v) => v !== null ? num(v, 6) : "n/a" },{ key: "average_exit_price", label: "Salida", render: (v) => v !== null ? num(v, 6) : "n/a" },{ key: "spread_pct", label: "Spread", render: (v) => `${num(v, 4)} %` },{ key: "score", label: "Score", render: (v) => num(v, 1) },{ key: "execution", label: "Ejecucion" },{ key: "maker_fee", label: "Comision", render: (v, row) => money((Number(v || 0) + Number(row.taker_fee || 0))) },{ key: "realized_pnl", label: "PnL", render: (v) => `<span class="${toneByValue(v)}">${money(v)}</span>` },{ key: "exposure_time_ms", label: "Tiempo", render: (v) => `${Math.round(v || 0)} ms` },{ key: "adverse_selection_pct", label: "Seleccion adversa", render: (v) => `${num(v, 4)} %` }], latest, "mm-latest-table", "Aun no hay simulaciones registradas.")}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Microineficiencias</h3><p class="section-subtitle">Observacion estadistica separada entre discovery y validation.</p></div></div><div class="grid cards-secondary">${metricCard("Senales totales", String(microOverall.total_signals || 0), `${microOverall.sample_size || 0} muestras`, "blue")}${metricCard("Estado", microOverall.state || "RECOLECTANDO", microOverall.ready_for_evaluation ? "Listo para evaluar" : "Esperando minimos de muestra", microOverall.ready_for_evaluation ? "green" : "yellow")}${metricCard("Patron lider", microOverall.promising_signal || "sin evidencia", microOverall.best_horizon_ms ? `mejor ${microOverall.best_horizon_ms} ms` : "sin horizonte dominante", "blue")}</div><div class="grid cards-secondary" style="margin-top:18px;">${metricCard("Discovery", String(microDiscovery.total_signals || 0), microDiscovery.state || "RECOLECTANDO", "yellow")}${metricCard("Validation", String(microValidation.total_signals || 0), microValidation.state || "SIN_VALIDACION", "green")}${metricCard("Peor horizonte", microOverall.worst_horizon_ms ? `${microOverall.worst_horizon_ms} ms` : "sin datos", `mov. medio ${num(microOverall.movement_mean_pct || 0, 4)} %`, "red")}</div></section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Candidatas</h3><p class="section-subtitle">Solo patrones con muestra minima y estabilidad entre discovery y validation.</p></div></div>${table([{ key: "label", label: "Patron" },{ key: "count", label: "Casos" },{ key: "discovery_hit_rate_pct", label: "Discovery", render: (v) => `${num(v, 1)} %` },{ key: "validation_hit_rate_pct", label: "Validation", render: (v) => `${num(v, 1)} %` },{ key: "stability_gap_pct", label: "Gap", render: (v) => `${num(v, 1)} %` },{ key: "state", label: "Estado", render: (v) => pill(v, v === "PROMETEDORA" ? "green" : v === "CANDIDATA" ? "blue" : "yellow") }], microOverall.candidates || [], "micro-candidates-table", "Todavia no hay candidatas validas.")}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Senales recientes de microineficiencias</h3><p class="section-subtitle">Eventos candidatos con score, direccion esperada y mercado.</p></div></div>${table([{ key: "market", label: "Mercado" },{ key: "signal_label", label: "Patron" },{ key: "predicted_direction", label: "Direccion" },{ key: "score", label: "Score", render: (v) => `<strong>${num(v, 1)}</strong>` },{ key: "spread_pct", label: "Spread", render: (v) => `${num(v, 4)} %` },{ key: "volume_quote", label: "Volumen", render: (v) => money(v, 0) },{ key: "liquidity_level", label: "Liquidez" },{ key: "hour_of_day", label: "Hora", render: (v) => `${v}:00` }], micro.current_signals || [], "micro-current-table", "Aun no hay senales microestructurales maduras.")}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Analisis por patron</h3><p class="section-subtitle">Numero de casos, horizontes, dispersion y diferencia entre discovery y validation.</p></div></div>${table([{ key: "label", label: "Patron" },{ key: "count", label: "Casos" },{ key: "favorable_pct", label: "Fav.", render: (v) => `${num(v, 1)} %` },{ key: "best_horizon_ms", label: "Mejor", render: (v) => v ? `${v} ms` : "n/a" },{ key: "worst_horizon_ms", label: "Peor", render: (v) => v ? `${v} ms` : "n/a" },{ key: "deviation_pct", label: "Desv.", render: (v) => `${num(v, 4)} %` },{ key: "state", label: "Estado", render: (v) => pill(v, v === "PROMETEDORA" ? "green" : v === "CANDIDATA" ? "blue" : v === "DESCARTADA" ? "red" : "yellow") }], micro.pattern_analysis || [], "micro-pattern-table", "Aun no hay analisis por patron.")}</section><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Desglose microestructural</h3><p class="section-subtitle">Patrones, mercados, horizontes y validacion posterior.</p></div></div><div class="split"><div class="list">${(microOverall.by_type || []).slice(0,8).map((item) => `<div class="list-item"><strong>${item.label}</strong><div class="small muted" style="margin-top:6px;">${item.count} casos | disc ${num(item.discovery_hit_rate_pct,1)} % | val ${num(item.validation_hit_rate_pct,1)} % | estado ${item.state}</div></div>`).join("") || `<div class="empty">Sin datos por tipo.</div>`}</div><div class="list">${(microOverall.by_market || []).slice(0,8).map((item) => `<div class="list-item"><strong>${item.label}</strong><div class="small muted" style="margin-top:6px;">${item.count} casos | acierto ${num(item.hit_rate_pct,1)} % | mov. medio ${num(item.movement_mean_pct,4)} %</div></div>`).join("") || `<div class="empty">Sin datos por mercado.</div>`}</div></div><div class="split" style="margin-top:18px;"><div class="list">${(microOverall.by_horizon || []).slice(0,8).map((item) => `<div class="list-item"><strong>${item.horizon_ms} ms</strong><div class="small muted" style="margin-top:6px;">${item.count} muestras | acierto ${num(item.hit_rate_pct,1)} % | media ${num(item.movement_mean_pct,4)} %</div></div>`).join("") || `<div class="empty">Sin datos por horizonte.</div>`}</div><div class="list">${(micro.direction_breakdown || []).map((item) => `<div class="list-item"><strong>${item.label}</strong><div class="small muted" style="margin-top:6px;">${item.count} senales esperadas en esa direccion</div></div>`).join("") || `<div class="empty">Sin datos de direccion.</div>`}</div></div></section>`;
+      }
+
+      function renderStatistics(data) {
+        const windows = data.windows || {};
+        return `<div class="grid cards-secondary">${Object.entries(windows).map(([label, item]) => metricCard(label.toUpperCase(), String(item.opportunity_count), `${item.executable_count} ejecutables | mejor ${num(item.best_net_pct, 3)} %`, item.best_net_pct >= 0 ? "green" : "red")).join("")}</div><div class="split" style="margin-top:18px;"><section class="panel"><div class="panel-header"><div><h3 class="section-title">Rentabilidad por ruta</h3><p class="section-subtitle">Top de neto conservador actual.</p></div><div class="filters"><select data-filter="period">${["24h", "7d", "30d", "total"].map((item) => `<option value="${item}" ${state.filters.period === item ? "selected" : ""}>${item}</option>`).join("")}</select></div></div>${chartSvg(data.profitability_chart || [], "#29d17d", (v) => `${num(v, 2)}%`)}</section><section class="panel"><div class="panel-header"><div><h3 class="section-title">Duracion de oportunidades</h3><p class="section-subtitle">Persistencia observada en milisegundos.</p></div></div>${chartSvg(data.duration_chart || [], "#f4bc42", (v) => `${Math.round(v)} ms`)}</section></div>`;
+      }
+
+      function renderSystem(data) {
+        const runtime = data.runtime || {};
+        const storage = data.storage || {};
+        return `<div class="two-col"><section class="panel"><div class="panel-header"><div><h3 class="section-title">Salud del sistema</h3><p class="section-subtitle">Servicios criticos, latencia y estabilidad.</p></div></div><div class="list">${Object.entries(data.services || {}).map(([key, value]) => `<div class="list-item" style="display:flex;justify-content:space-between;align-items:center;"><span>${key}</span>${pill(value, value === "OK" || value === "CONECTADO" ? "green" : "red")}</div>`).join("")}</div></section><section class="panel"><div class="panel-header"><div><h3 class="section-title">Uso y runtime</h3><p class="section-subtitle">Metricas internas utiles sin ruido innecesario.</p></div></div><div class="list">${[["Uptime", `${runtime.uptime_seconds || 0} s`],["Latencia actual", runtime.current_latency_ms !== null ? `${runtime.current_latency_ms} ms` : "sin datos"],["Reconexiones", runtime.reconnect_count ?? 0],["Actualizaciones", runtime.total_updates ?? 0],["Intervalo medio", runtime.average_update_interval_ms ? `${num(runtime.average_update_interval_ms, 1)} ms` : "sin datos"],["Memoria proceso", storage.process_memory_mb ? `${num(storage.process_memory_mb, 1)} MB` : "sin datos"]].map(([k, v]) => `<div class="list-item" style="display:flex;justify-content:space-between;"><span>${k}</span><strong>${v}</strong></div>`).join("")}</div></section></div><section class="panel" style="margin-top:18px;"><div class="panel-header"><div><h3 class="section-title">Registros recientes</h3><p class="section-subtitle">Eventos estructurados y rastreables.</p></div></div>${table([{ key: "created_at", label: "Fecha", render: (v) => new Date(v).toLocaleString("es-ES") },{ key: "event_type", label: "Evento" },{ key: "payload", label: "Detalle", render: (v) => `<span class="small muted">${JSON.stringify(v)}</span>` }], data.events || [], "system-events", "No hay eventos registrados.")}</section>`;
+      }
+
+      function renderConfiguration(data) {
+        const rows = Object.entries(data || {}).map(([key, value]) => ({ key, value: Array.isArray(value) ? value.join(", ") : String(value) }));
+        return `<section class="panel"><div class="panel-header"><div><h3 class="section-title">Configuracion visible</h3><p class="section-subtitle">Sin secretos, sin claves y con controles de seguridad expuestos.</p></div></div>${table([{ key: "key", label: "Parametro" },{ key: "value", label: "Valor" }], rows, "config-table", "No hay configuracion visible.")}</section>`;
+      }
+
+      function renderPages() {
+        const pages = document.getElementById("pages");
+        pages.innerHTML = `<section class="page ${state.page === "overview" ? "active" : ""}">${renderOverview(state.data.overview || {})}</section><section class="page ${state.page === "markets" ? "active" : ""}">${renderMarkets(state.data.markets || {})}</section><section class="page ${state.page === "opportunities" ? "active" : ""}">${renderOpportunities(state.data.opportunities || {})}</section><section class="page ${state.page === "experiments" ? "active" : ""}">${renderExperiments(state.data.experiments || {})}</section><section class="page ${state.page === "statistics" ? "active" : ""}">${renderStatistics(state.data.statistics || {})}</section><section class="page ${state.page === "system" ? "active" : ""}">${renderSystem(state.data.system || {})}</section><section class="page ${state.page === "configuration" ? "active" : ""}">${renderConfiguration(state.data.configuration || {})}</section>`;
+        bindInteractive();
+      }
+
+      function renderShell() {
+        document.getElementById("nav").innerHTML = state.meta.pages.map(([id, label]) => `<button data-page-link="${id}" class="${state.page === id ? "active" : ""}">${label}</button>`).join("");
+        const current = state.meta.pages.find((item) => item[0] === state.page);
+        document.getElementById("pageTitle").textContent = current[1];
+        document.getElementById("pageSubtitle").textContent = current[2];
+        const overview = state.data.overview || {};
+        document.getElementById("modeBannerValue").textContent = overview.mode || "SIMULACION";
+        document.getElementById("modeBannerStatus").innerHTML = pill(overview.system_status || "Inicializando", overview.system_status === "ESTABLE" ? "green" : "yellow");
+        document.getElementById("sidebarUpdate").textContent = ago(overview.last_update_seconds);
+        document.getElementById("sidebarConnection").innerHTML = pill(overview.bitvavo_status || "Conectando", overview.bitvavo_status === "CONECTADO" ? "green" : "red");
+        document.getElementById("statusStrip").innerHTML = `<span class="chip"><span class="dot ${overview.system_status === "ESTABLE" ? "green" : "yellow"}"></span>Sistema ${overview.system_status || "..."}</span><span class="chip"><span class="dot ${overview.bitvavo_status === "CONECTADO" ? "green" : "red"}"></span>Bitvavo ${overview.bitvavo_status || "..."}</span><span class="chip"><span class="dot ${overview.collector_status === "OK" ? "green" : "yellow"}"></span>Recolector ${overview.collector_status || "..."}</span><span class="chip">Mercados ${overview.markets_tracked || 0}</span>`;
+      }
+
+      function bindInteractive() {
+        document.querySelectorAll("[data-page-link]").forEach((btn) => btn.onclick = () => {
+          state.page = btn.dataset.pageLink;
+          location.hash = state.page;
+          renderShell();
+          renderPages();
+        });
+        document.querySelectorAll("[data-sort]").forEach((el) => el.onclick = () => {
+          const [tableKey, column] = el.dataset.sort.split(":");
+          const current = state.sort[tableKey];
+          state.sort[tableKey] = !current || current.column !== column ? { column, dir: "desc" } : { column, dir: current.dir === "desc" ? "asc" : "desc" };
+          renderPages();
+        });
+        document.querySelectorAll("[data-filter]").forEach((el) => el.onchange = () => {
+          state.filters[el.dataset.filter] = el.value;
+          renderPages();
+        });
+      }
+
+      async function fetchJson(path) {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`Fallo al cargar ${path}`);
+        return res.json();
+      }
+
+      async function loadData() {
+        try {
+          document.getElementById("globalState").className = "loading";
+          document.getElementById("globalState").textContent = "Actualizando datos en tiempo real...";
+          const [overview, markets, opportunities, experiments, statistics, system, configuration] = await Promise.all([
+            fetchJson("/api/v1/overview"),
+            fetchJson("/api/v1/markets"),
+            fetchJson("/api/v1/opportunities"),
+            fetchJson("/api/v1/experiments"),
+            fetchJson("/api/v1/statistics"),
+            fetchJson("/api/v1/system"),
+            fetchJson("/api/v1/configuration"),
+          ]);
+          state.data = { overview, markets, opportunities, experiments, statistics, system, configuration };
+          renderShell();
+          renderPages();
+          document.getElementById("globalState").style.display = "none";
+        } catch (error) {
+          document.getElementById("globalState").style.display = "block";
+          document.getElementById("globalState").className = "error-box";
+          document.getElementById("globalState").textContent = `No se pudo cargar el dashboard: ${error.message}`;
+        }
+      }
+
+      renderShell();
+      renderPages();
+      loadData();
+      setInterval(loadData, 10000);
+      window.addEventListener("hashchange", () => {
+        state.page = location.hash.replace("#", "") || "overview";
+        renderShell();
+        renderPages();
+      });
+    </script>
+  </body>
+</html>
