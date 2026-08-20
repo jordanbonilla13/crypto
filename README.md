@@ -16,6 +16,39 @@ Esta primera entrega implementa la Fase 1:
 - `health` del sistema;
 - `TradingGuard` central que bloquea cualquier operacion real por defecto.
 
+## Punto actual del laboratorio
+
+Resumen de la ultima decision de trabajo para saber exactamente por donde vamos:
+
+- `market making` queda congelado como experimento de referencia.
+- Su estado actual debe tratarse como `NO RENTABLE` con costes y ejecucion realistas.
+- No debemos sobreoptimizar filtros ni parametros para forzar un resultado positivo artificial.
+- Los resultados, metricas y configuracion de `market making` se conservan para compararlos mas adelante.
+- El foco activo ahora es `microineficiencias`, solo en observacion y simulacion.
+- No hay estrategia de entrada/salida activa para microineficiencias todavia.
+- No se deben cambiar parametros, umbrales ni reglas usando datos de `VALIDATION`.
+- `DISCOVERY` sirve para descubrir patrones; `VALIDATION` solo sirve para comprobar si sobreviven fuera de muestra.
+- Mientras `VALIDATION=0` o no haya muestra suficiente, el estado no debe mostrarse como `DESCARTADA`, sino como `RECOLECTANDO` o `SIN_VALIDACION`.
+- Todo el sistema debe permanecer en `SIMULACION`. No activar ordenes reales.
+
+## Criterios vigentes para microineficiencias
+
+- Minimo `2.000` senales totales antes de sacar conclusiones generales.
+- Minimo `500` senales en `VALIDATION` antes de evaluar supervivencia fuera de muestra.
+- Minimo `100` casos por patron concreto antes de juzgar ese patron.
+- Si la frecuencia lo permite, preferimos cientos o miles de casos por patron antes de marcar una candidata real.
+
+## Siguiente hito
+
+Cuando `VALIDATION` alcance la muestra minima, el sistema debe poder informar de forma sencilla:
+
+- cuantas senales hay;
+- que patrones sobreviven;
+- cuales fallan;
+- cual es el mejor horizonte temporal;
+- si existe alguna candidata real para convertir en estrategia economica;
+- o si no existe ninguna.
+
 ## Advertencia obligatoria
 
 EL SISTEMA NO GARANTIZA BENEFICIOS.
